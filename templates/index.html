@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>
+        Smart City Noise Monitoring Dashboard
+    </title>
+
+
+    <!-- ================================================= -->
+    <!-- BOOTSTRAP -->
+    <!-- ================================================= -->
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+
+
+    <!-- ================================================= -->
+    <!-- LEAFLET -->
+    <!-- ================================================= -->
+
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+
+
+    <!-- ================================================= -->
+    <!-- CUSTOM CSS -->
+    <!-- ================================================= -->
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}">
+
+
+    <!-- ================================================= -->
+    <!-- PAGE STYLE -->
+    <!-- ================================================= -->
+
+    <style>
+
+        body {
+            background-color: #f5f7fa;
+        }
+
+
+        .dashboard-title {
+            margin-top: 25px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+
+        .dashboard-subtitle {
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+
+        .dashboard-card {
+            border-radius: 12px;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+
+
+        .card-title {
+            font-size: 15px;
+            color: #666;
+        }
+
+
+        .card-value {
+            font-size: 28px;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+
+
+        .section-title {
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+
+        #map {
+            height: 500px;
+            width: 100%;
+            border-radius: 10px;
+        }
+
+
+        canvas {
+            max-height: 400px;
+        }
+
+
+        .threshold-card {
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: white;
+            border: 1px solid #ddd;
+        }
+
+
+        .alert-box {
+            border-radius: 10px;
+            padding: 15px;
+            background: #fff3cd;
+            border: 1px solid #ffe69c;
+            margin-bottom: 20px;
+        }
+
+
+        .highest-noise-box {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #ddd;
+        }
+
+
+        .highest-value {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+
+        .table-responsive {
+            border-radius: 10px;
+        }
+
+
+        .compliance-good {
+            font-weight: bold;
+        }
+
+
+        .compliance-bad {
+            font-weight: bold;
+        }
+
+
+        .attention-text {
+            font-weight: bold;
+        }
+
+
+        .map-summary-card {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            background: white;
+            border: 1px solid #ddd;
+        }
+
+
+        .map-summary-number {
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+
+        .final-status-box {
+            border-radius: 10px;
+            padding: 15px;
+            background: white;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+
+        @media print {
+
+            .navbar,
+            button,
+            input,
+            select {
+                display: none !important;
+            }
+
+            body {
+                background: white;
+            }
+
+            .dashboard-card {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+
+            #map {
+                height: 400px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <!-- ================================================= -->
+    <!-- NAVBAR -->
+    <!-- ================================================= -->
+
+    <nav class="navbar navbar-dark bg-dark">
+
+        <div class="container">
+
+            <span class="navbar-brand">
+                Smart City Noise Monitoring
+            </span>
+
+        </div>
+
+    </nav>
+
+
+    <div class="container">
+
+
+        <!-- ================================================= -->
+        <!-- PROJECT HEADING -->
+        <!-- ================================================= -->
+
+        <h2 class="dashboard-title">
+
+            Spatial Intelligence and Compliance Monitoring Dashboard
+
+        </h2>
+
+
+        <p class="dashboard-subtitle">
+
+            Smart City Noise Pollution Monitoring System
+
+        </p>
+
+
+        <!-- ================================================= -->
+        <!-- SUMMARY CARDS -->
+        <!-- ================================================= -->
+
+        <div class="row">
+
+
+            <div class="col-md-3">
+
+                <div class="dashboard-card">
+
+                    <div class="card-title">
+                        Total Locations
+                    </div>
+
+                    <div
+                        class="card-value"
+                        id="totalLocations">
+
+                        0
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-3">
+
+                <div class="dashboard-card">
+
+                    <div class="card-title">
+                        Average Noise
+                    </div>
+
+                    <div class="card-value">
+
+                        <span id="averageNoise">
+                            0
+                        </span>
+
+                        dB
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-3">
+
+                <div class="dashboard-card">
+
+                    <div class="card-title">
+                        Violations
+                    </div>
+
+                    <div
+                        class="card-value"
+                        id="violations">
+
+                        0
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-3">
+
+                <div class="dashboard-card">
+
+                    <div class="card-title">
+                        Compliance Rate
+                    </div>
+
+                    <div class="card-value">
+
+                        <span id="complianceRate">
+                            0
+                        </span>%
+
+                    </div>
+
+                    <small id="complianceDetails">
+
+                        0 of 0 locations compliant
+
+                    </small>
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- NOISE CLASSIFICATION -->
+        <!-- ================================================= -->
+
+        <div class="dashboard-card">
+
+            <h4 class="section-title">
+                Noise Classification
+            </h4>
+
+
+            <div class="row">
+
+
+                <div class="col-md-4">
+
+                    <div class="threshold-card">
+
+                        <strong>
+                            Normal
+                        </strong>
+
+                        <br>
+
+                        ≤ 75 dB
+
+                        <br>
+
+                        <span id="normalCount">
+                            0
+                        </span>
+
+                        locations
+
+                    </div>
+
+                </div>
+
+
+                <div class="col-md-4">
+
+                    <div class="threshold-card">
+
+                        <strong>
+                            Moderate
+                        </strong>
+
+                        <br>
+
+                        76–85 dB
+
+                        <br>
+
+                        <span id="moderateCount">
+                            0
+                        </span>
+
+                        locations
+
+                    </div>
+
+                </div>
+
+
+                <div class="col-md-4">
+
+                    <div class="threshold-card">
+
+                        <strong>
+                            High
+                        </strong>
+
+                        <br>
+
+                        > 85 dB
+
+                        <br>
+
+                        <span id="highCount">
+                            0
+                        </span>
+
+                        locations
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- THRESHOLD REFERENCE -->
+        <!-- ================================================= -->
+
+        <div class="dashboard-card">
+
+            <h4 class="section-title">
+
+                Noise Threshold & Compliance Reference
+
+            </h4>
+
+
+            <div class="row">
+
+
+                <div class="col-md-4">
+
+                    <div class="threshold-card">
+
+                        <strong>
+                            Normal
+                        </strong>
+
+                        <p class="mb-0">
+                            ≤ 75 dB
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="col-md-4">
+
+                    <div class="threshold-card">
+
+                        <strong>
+                            Moderate
+                        </strong>
+
+                        <p class="mb-0">
+                            76–85 dB
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <div class="col-md-4">
+
+                    <div class="threshold-card">
+
+                        <strong>
+                            High / Alert
+                        </strong>
+
+                        <p class="mb-0">
+                            > 85 dB
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+            <p class="mt-2 mb-0">
+
+                Alert Threshold:
+
+                <strong>
+
+                    <span id="alertThresholdValue">
+                        85
+                    </span>
+
+                    dB
+
+                </strong>
+
+            </p>
+
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- HIGHEST NOISE ANALYSIS -->
+        <!-- ================================================= -->
+
+        <div class="dashboard-card">
+
+            <h4 class="section-title">
+
+                Highest Noise Level Analysis
+
+            </h4>
+
+
+            <div class="highest-noise-box">
+
+
+                <h5 id="highestNoiseLocation">
+
+                    No data available
+
+                </h5>
+
+
+                <div class="highest-value">
+
+                    <span id="highestNoiseValue">
+                        0
+                    </span>
+
+                    dB
+
+                </div>
+
+
+                <p id="highestNoiseStatus">
+
+                    No data
+
+                </p>
+
+
+            </div>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- STEP 8 - COMPLIANCE MONITORING -->
+        <!-- ================================================= -->
+
+        <div class="dashboard-card">
+
+            <h4 class="section-title">
+
+                Compliance Monitoring Summary
+
+            </h4>
+
+
+            <div class="row">
+
+
+                <div class="col-md-3">
+
+                    <div class="threshold-card text-center">
+
+                        <h6>
+                            Total Locations
+                        </h6>
+
+                        <h3 id="complianceTotalLocations">
+                            0
+                        </h3>
+
+                    </div>
+
+                </div>
+
+
+                <div class="col-md-3">
+
+                    <div class="threshold-card text-center">
+
+                        <h6>
+                            Compliant Locations
+                        </h6>
+
+                        <h3 id="compliantLocations">
+                            0
+                        </h3>
+
+                    </div>
+
+                </div>
+
+
+                <div class="col-md-3">
+
+                    <div class="threshold-card text-center">
+
+                        <h6>
+                            Violations
+                        </h6>
+
+                        <h3 id="complianceViolations">
+                            0
+                        </h3>
+
+                    </div>
+
+                </div>
+
+
+                <div class="col-md-3">
+
+                    <div class="threshold-card text-center">
+
+                        <h6>
+                            Compliance Rate
+                        </h6>
+
+                        <h3>
+
+                            <span id="compliancePercentage">
+                                0
+                            </span>%
+
+                        </h3>
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+            <div
+                class="alert alert-info mt-3 mb-0"
+                id="complianceSummary">
+
+                Compliance information will appear here.
+
+            </div>
+
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- LOCATION-WISE COMPLIANCE -->
+        <!-- ================================================= -->
+
+        <div class="dashboard-card">
+
+            <h4 class="section-title">
+
+                Location-wise Compliance Monitoring
+
+            </h4>
+
+
+            <div class="table-responsive">
+
+
+                <table class="table table-bordered table-hover">
+
+
+                    <thead class="table-dark">
+
+                        <tr>
+
+                            <th>
+                                Location
+                            </th>
+
+                            <th>
+                                Noise Level
+                            </th>
+
+                            <th>
+                                Classification
+                            </th>
+
+                            <th>
+                                Compliance
+                            </th>
+
+                            <th>
+                                Monitoring Action
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody id="complianceTableBody">
+
+                    </tbody>
+
+
+                </table>
+
+
+            </div>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- STEP 9 - ADVANCED SPATIAL INTELLIGENCE -->
+        <!-- ================================================= -->
+
+        <div class="dashboard-card">
+
+            <h4 class="section-title">
+
+                Advanced Spatial Intelligence
+
+            </h4>
+
+
+            <p class="text-muted">
+
+                Spatial visualization of monitored locations
+                based on noise level classification.
+
+            </p>
+
+
+            <!-- MAP SUMMARY -->
+
+            <div class="row mb-3">
+
+
+                <div class="col-md-4">
+
+                    <div class="map-summary-card">
+
+                        <strong>
+                            Normal Locations
+                        </strong>
+
+                        <div
+                            class="map-summary-number"
+                            id="mapNormalCount">
+
+                            0
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="col-md-4">
+
+                    <div class="map-summary-card">
+
+                        <strong>
+                            Moderate Locations
+                        </strong>
+
+                        <div
+                            class="map-summary-number"
+                            id="mapModerateCount">
+
+                            0
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="col-md-4">
+
+                    <div class="map-summary-card">
+
+                        <strong>
+                            High Noise Locations
+                        </strong>
+
+                        <div
+                            class="map-summary-number"
+                            id="mapHighCount">
+
+                            0
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+            <!-- SHOW ALL LOCATIONS -->
+
+            <div class="mb-3">
+
+                <button
+                    type="button"
+                    class="btn btn-dark"
+                    id="showAllLocations">
+
+                    Show All Locations
+
+                </button>
+
+            </div>
+
+
+            <!-- MAP -->
+
+            <div id="map"></div>
+
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- THRESHOLD COMPARISON -->
+        <!-- ================================================= -->
+
+        <div class="dashboard-card">
+
+            <h4 class="section-title">
+
+                Noise Level vs Alert Threshold
+
+            </h4>
+
+
+            <canvas
+                id="thresholdComparisonChart">
+            </canvas>
+
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- NOISE POLLUTION ALERTS -->
+        <!-- ================================================= -->
+
+        <div class="dashboard-card">
+
+            <h4 class="section-title">
+
+                Noise Pollution Alerts
+
+            </h4>
+
+
+            <div class="alert-box">
+
+                <strong id="alertSummary">
+
+                    No alerts available.
+
+                </strong>
+
+            </div>
+
+
+            <div class="table-responsive">
+
+
+                <table class="table table-bordered table-hover">
+
+
+                    <thead class="table-dark">
+
+                        <tr>
+
+                            <th>
+                                Location
+                            </th>
+
+                            <th>
+                                Noise Level
+                            </th>
+
+                            <th>
+                                Status
+                            </th>
+
+                            <th>
+                                Alert
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody id="alertTableBody">
+
+                    </tbody>
+
+
+                </table>
+
+
+            </div>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- NOISE DISTRIBUTION -->
+        <!-- ================================================= -->
+
+        <div class="dashboard-card">
+
+            <h4 class="section-title">
+
+                Noise Level Distribution
+
+            </h4>
+
+
+            <canvas id="noiseChart"></canvas>
+
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- LOCATION-WISE NOISE -->
+        <!-- ================================================= -->
+
+        <div class="dashboard-card">
+
+            <h4 class="section-title">
+
+                Location-wise Noise Level Analysis
+
+            </h4>
+
+
+            <canvas
+                id="locationNoiseChart">
+            </canvas>
+
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- COMPLIANCE OVERVIEW -->
+        <!-- ================================================= -->
+
+        <div class="dashboard-card">
+
+            <h4 class="section-title">
+
+                Compliance Overview
+
+            </h4>
+
+
+            <canvas
+                id="complianceChart">
+            </canvas>
+
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- STEP 10 - FINAL DASHBOARD STATUS -->
+        <!-- ================================================= -->
+
+        <div class="dashboard-card">
+
+            <h4 class="section-title">
+
+                Dashboard Status
+
+            </h4>
+
+
+            <div class="final-status-box">
+
+                <h5>
+                    Smart City Noise Monitoring System
+                </h5>
+
+
+                <p class="mb-1">
+
+                    Spatial Intelligence and
+                    Compliance Monitoring Dashboard
+
+                </p>
+
+
+                <p class="text-success mb-0">
+
+                    ● System Active
+
+                </p>
+
+
+            </div>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- MONITORING DATA -->
+        <!-- ================================================= -->
+
+        <div class="dashboard-card">
+
+            <h4 class="section-title">
+
+                Monitoring Data
+
+            </h4>
+
+
+            <!-- STEP 10 CONTROLS -->
+
+            <div class="row mb-3">
+
+
+                <div class="col-md-4 mb-2">
+
+                    <button
+                        type="button"
+                        class="btn btn-success w-100"
+                        id="exportDataButton">
+
+                        📥 Export Monitoring Data
+
+                    </button>
+
+                </div>
+
+
+                <div class="col-md-4 mb-2">
+
+                    <button
+                        type="button"
+                        class="btn btn-secondary w-100"
+                        id="printDashboardButton">
+
+                        🖨️ Print Dashboard
+
+                    </button>
+
+                </div>
+
+
+                <div class="col-md-4 mb-2">
+
+                    <div
+                        class="alert alert-light text-center mb-0">
+
+                        Last Updated:
+
+                        <strong id="lastUpdated">
+
+                            Not available
+
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+            <!-- SEARCH AND FILTER -->
+
+            <div class="row mb-3">
+
+
+                <div class="col-md-6">
+
+                    <input
+                        type="text"
+                        id="locationSearch"
+                        class="form-control"
+                        placeholder="Search location...">
+
+                </div>
+
+
+                <div class="col-md-6">
+
+                    <select
+                        id="statusFilter"
+                        class="form-select">
+
+
+                        <option value="All">
+                            All
+                        </option>
+
+
+                        <option value="Normal">
+                            Normal
+                        </option>
+
+
+                        <option value="Moderate">
+                            Moderate
+                        </option>
+
+
+                        <option value="High">
+                            High
+                        </option>
+
+
+                        <option value="Violation">
+                            Violation
+                        </option>
+
+
+                    </select>
+
+                </div>
+
+
+            </div>
+
+
+            <!-- MONITORING TABLE -->
+
+            <div class="table-responsive">
+
+
+                <table class="table table-bordered table-hover">
+
+
+                    <thead class="table-dark">
+
+                        <tr>
+
+                            <th>
+                                Location
+                            </th>
+
+                            <th>
+                                Noise Level
+                            </th>
+
+                            <th>
+                                Status
+                            </th>
+
+                            <th>
+                                Compliance
+                            </th>
+
+                            <th>
+                                Latitude
+                            </th>
+
+                            <th>
+                                Longitude
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody id="monitoringTableBody">
+
+                    </tbody>
+
+
+                </table>
+
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+
+    <!-- ================================================= -->
+    <!-- BOOTSTRAP JAVASCRIPT -->
+    <!-- ================================================= -->
+
+    <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js">
+    </script>
+
+
+    <!-- ================================================= -->
+    <!-- LEAFLET JAVASCRIPT -->
+    <!-- ================================================= -->
+
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js">
+    </script>
+
+
+    <!-- ================================================= -->
+    <!-- CHART.JS -->
+    <!-- ================================================= -->
+
+    <script
+        src="https://cdn.jsdelivr.net/npm/chart.js">
+    </script>
+
+
+    <!-- ================================================= -->
+    <!-- DASHBOARD JAVASCRIPT -->
+    <!-- ================================================= -->
+
+    <script
+        src="{{ url_for('static', filename='js/dashboard.js') }}">
+    </script>
+
+
+</body>
+
+</html>

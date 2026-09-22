@@ -1,0 +1,8 @@
+location,latitude,longitude,noise_level,status,compliance
+Erode Bus Stand,11.3410,77.7172,72,Normal,Compliant
+Erode Railway Station,11.3410,77.7280,88,High,Violation
+Perundurai,11.2756,77.5876,65,Normal,Compliant
+Bhavani,11.4455,77.6821,82,Moderate,Compliant
+Chithode,11.3600,77.7270,91,High,Violation
+Gobichettipalayam,11.4550,77.4420,76,Normal,Compliant
+Sathyamangalam,11.5050,77.2380,86,High,Violation
