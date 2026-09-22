@@ -19,7 +19,6 @@ def noise_data():
 
     csv_path = os.path.join(
         app.static_folder,
-        "js",
         "dataset",
         "noise_data.csv"
     )
